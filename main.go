@@ -80,12 +80,7 @@ func main() {
 	defer client.Close()
 
 	if migrate {
-		if err = addUpdatedAt(client); err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("migrate finished.\n")
+		fmt.Printf("Do nothing.\n")
 	} else {
 		var pages []page
 		if err = fetchPages(client, &pages); err != nil {
@@ -145,30 +140,4 @@ func fetchPages(client *firestore.Client, pages *[]page) error {
 	}
 
 	return nil
-}
-
-func addUpdatedAt(client *firestore.Client) error {
-	iter := client.Collection("pages").Documents(ctx)
-
-	return client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
-		for {
-			doc, err := iter.Next()
-			if err == iterator.Done {
-				return nil
-			}
-
-			if err != nil {
-				return fmt.Errorf("failed to iterate: %v", err)
-			}
-
-			time, err := doc.DataAt("createdAt")
-			if err != nil {
-				return err
-			}
-
-			if err = tx.Set(doc.Ref, map[string]interface{}{"updatedAt": time}, firestore.MergeAll); err != nil {
-				return err
-			}
-		}
-	})
 }
